@@ -1,0 +1,27 @@
+{
+  "name": "dex-iii-farm",
+  "version": "0.0.1",
+  "description": "Package for DEX-III stage",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SVOIcom/Dex-III-farm.git"
+  },
+  "keywords": [
+    "DEX",
+    "Free-TON",
+    "SVOI.dev"
+  ],
+  "author": "Paul Mikhaylov",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/SVOIcom/Dex-III-farm/issues"
+  },
+  "homepage": "https://github.com/SVOIcom/Dex-III-farm#readme",
+  "dependencies": {
+    "locklift": "^1.4.4"
+  }
+}
