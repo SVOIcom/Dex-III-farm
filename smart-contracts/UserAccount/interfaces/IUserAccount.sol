@@ -3,8 +3,14 @@ pragma ton-solidity >= 0.43.0;
 struct UserFarmInfo {
     address tokenAmount;
     uint64 lastRewardTime;
-    address stackingTIP3;
-    address rewardTIP3;
+
+    address stackingTIP3Wallet;
+    address stackingTIP3UserWallet;
+    address stackingTIP3Root;
+    address rewardTIP3Root;
+
+    uint64 start;
+    uint64 finish;
 }
 
 interface IUserAccount {
