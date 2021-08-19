@@ -1,5 +1,19 @@
 pragma ton-solidity >= 0.43.0;
 
+struct FarmInfo {
+    address stackingTIP3Root;
+    address rewardTIP3Root;
+    address rewardTIP3Wallet;
+
+    uint128 totalReward;
+    uint128 totalPayout;
+    uint128 totalStacked;
+
+    uint64 startTime;
+    uint64 finishTime;
+    uint64 duration;
+}
+
 interface IFarmContract {
     function setUserAccountCode(TvmCell userAccountCode_) external;
     function startFarming(
@@ -15,7 +29,7 @@ interface IFarmContract {
 
     function withdrawPendingReward(address userAccountOwner, uint128 tokenAmount, uint64 lastRewardTime, address rewardWallet) external;
 
-    function withdrawWithPending(address userAccountOwner, uint128 tokensToWithdraw, uint128 originalTokensAmount, uint64 lastRewardTime, address rewardWallet) external;
+    function withdrawWithPendingReward(address userAccountOwner, uint128 tokensToWithdraw, uint128 originalTokensAmount, uint64 lastRewardTime, address rewardWallet) external;
 
     function calculateReward(uint128 tokenAmount, uint64 lastRewardTime) external responsible returns(uint128);
 
@@ -23,6 +37,6 @@ interface IFarmContract {
 
     function getUserAccountAddress(address userAccountOwner) external responsilbe returns(address);
 
-    
+    function fetchInfo() external responsible returns(FarmInfo);
     
 }

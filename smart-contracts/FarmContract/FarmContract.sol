@@ -13,20 +13,13 @@ contract FarmContract is ITokensReceivedCallback {
 
     address owner;
 
-    address stackingTIP3Address;
-    address rewardTIP3Address;
-
-    address rewardTIP3Wallet;
+    FarmInfo farmInfo;
 
     TvmCell userAccountCode;
-
-    uint128 totalReward;
-    uint128 totalStacked;
-    uint64 startTime;
-    uint64 finishTime;
-    uint64 duration;
+    TvmCell empty;
 
     constructor(address ownerAddress) public {
+        tvm.accept();
         owner = ownerAddress;
     }
 
@@ -42,45 +35,84 @@ contract FarmContract is ITokensReceivedCallback {
         uint64 startTime_,
         uint64 finishTime_
     ) external onlyOwner ifNoFarmIsActive {
-        stackingTIP3Address = stackingTIP3Address_;
-        rewardTIP3Address = rewardTIP3Address_;
-        rewardTIP3Wallet = rewardTIP3Wallet_;
-        totalReward = totalReward_;
-        startTime = startTime_;
-        finishTime = finishTime_;
-        duration = finishTime - startTime;
+        farmInfo.stackingTIP3Root = stackingTIP3Address_;
+        farmInfo.rewardTIP3Root = rewardTIP3Address_;
+        farmInfo.rewardTIP3Wallet = rewardTIP3Wallet_;
 
-        totalStacked = 0;
+        farmInfo.totalReward = totalReward;
+        farmInfo.totalPayout = 0;
+        farmInfo.totalStacked = 0;
+
+        farmInfo.startTime = startTime_;
+        farmInfo.finishTime = finishTime_;
+        farmInfo.duration = finishTime_ - startTime_;
     }
 
     function tokensDepositedToFarm(address userAccountOwner, uint128 tokensDeposited, uint128 tokensAmount, uint64 lastRewardTime, address rewardWallet) external onlyValidUserAccount(userAccountOwner) {
-        totalStacked += tokensDeposited;
+        farmInfo.totalStacked += tokensDeposited;
 
-        IUserAccount(msg.sender).updateRewardTime{
-            value: 0.1 ton
-        }(uint64(now));
-
-        if (lastRewardTime != 0) {
-            uint128 reward = _calculateReward(tokensAmount - tokensDeposited, lastRewardTime);
-            ITONTokenWallet(rewardWallet).transfer();
-        } else {
-
-        }
+        payoutReward(
+            tokensAmount,
+            lastRewardTime,
+            rewardWallet,
+            userAccountOwner,
+            msg.sender,
+            uint64(now)
+        );
     }
 
     function withdrawPendingReward(address userAccountOwner, uint128 tokenAmount, uint64 lastRewardTime, address rewardWallet) external onlyValidUserAccount(userAccountOwner) {
-        uint128 reward = _calculateReward(tokenAmount, lastRewardTime);
-        
-        IUserAccount(msg.sender).updateRewardTime(uint64(now));
-
-        ITONTokenWallet(rewardWallet).transfer();
+        payoutReward(
+            tokenAmount,
+            lastRewardTime,
+            rewardWallet,
+            userAccountOwner,
+            msg.sender,
+            uint64(now)
+        );
     }
 
     function withdrawWithPending(address userAccountOwner, uint128 tokensToWithdraw, uint128 originalTokensAmount, uint64 lastRewardTime, address rewardWallet) external onlyValidUserAccount(userAccountOwner)  {
-        uint128 reward = _calculateReward(originalTokensAmount, lastRewardTime);
-        totalStacked -= tokensToWithdraw;
+        farmInfo.totalStacked -= tokensToWithdraw;
 
-        IUserAccount(msg.sender).updateRewardTime(tokensToWithdraw == originalTokensAmount ? 0 : uint64(now));
+        payoutReward(
+            originalTokensAmount, 
+            lastRewardTime, 
+            rewardWallet, 
+            userAccountOwner, 
+            msg.sender,
+            tokensToWithdraw == originalTokensAmount ? 0 : uint64(now)
+        );
+    }
+
+    function payoutReward(
+        uint128 rewardTokens, 
+        uint64 lastRewardTime, 
+        address rewardWallet,
+        address userAccountOwner,
+        address userAccount,
+        uint64 updatedRewardTime
+    ) internal {
+        IUserAccount(userAccount).updateRewardTime{
+            value: 0.1 ton
+        }(udpatedRewardTime);
+
+        if (lastRewardTime != 0) {
+            uint128 reward = _calculateReward(rewardTokens, lastRewardTime);
+            farmInfo.totalPayout += reward;
+            ITONTokenWallet(farmInfo.rewardTIP3Wallet).transfer{
+                flags: 64
+            }(
+                rewardWallet,
+                reward,
+                0,
+                userAccountOwner,
+                true,
+                empty
+            )
+        } else {
+            address(userAccountOwner).transfer({flags: 64});
+        }
     }
 
     function calculateReward(uint128 tokenAmount, uint64 lastRewardTime) external responsible returns(uint128) {
@@ -88,8 +120,22 @@ contract FarmContract is ITokensReceivedCallback {
     }
 
     function _calculateReward(uint128 tokenAmount, uint64 lastRewardTime) internal returns (uint128) {
-        uint128 reward = tokenAmount * totalReward * (math.max(uint64(now), lastRewardTime) - lastRewardTime) / totalStacked / duration;
+        uint128 reward = 
+            tokenAmount *                   // User's token amount
+            farmInfo.totalReward *          // Tokens for reward
+            (math.max(farmInfo.finishTime, uint64(now)) - lastRewardTime) / // dt
+            farmInfo.totalStacked /         // Total tokens
+            farmInfo.duration;              // To calculate distributed tokens per block
         return reward;
+    }
+
+    function calculateAPY(uint128 tokenAmount) external returns (uint128) {
+        return 
+            tokenAmount *                           // Tokens provided
+            farmInfo.totalReward *                  // Tokens for reward
+            (farmInfo.finishTime - uint64(now)) /   // Farm time left
+            farmInfo.totalStacked /                 // Total stacked
+            farmInfo.duration;                      // Farm time duration
     }
 
     function deployUserAccount(address userAccountOwner) external {
@@ -126,6 +172,11 @@ contract FarmContract is ITokensReceivedCallback {
 
     modifier onlyValidUserAccount(address userAccountOwner) {
         require(msg.sender == _getUserAccountAddress(userAccountOwner));
+        _;
+    }
+
+    modifier activeFarm() {
+        require(uint64(now) >= farmInfo.startTime);
         _;
     }
 
