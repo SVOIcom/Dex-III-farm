@@ -5,6 +5,7 @@ struct FarmInfo {
     address rewardTIP3Root;
     address rewardTIP3Wallet;
 
+    uint128 rewardPerTokenSum;
     uint128 totalReward;
     uint128 totalPayout;
     uint128 totalStacked;
@@ -12,10 +13,12 @@ struct FarmInfo {
     uint64 startTime;
     uint64 finishTime;
     uint64 duration;
+    uint64 lastRPTSupdate;
 }
 
 interface IFarmContract {
     function setUserAccountCode(TvmCell userAccountCode_) external;
+
     function startFarming(
         address stackingTIP3Address_, 
         address rewardTIP3Address_, 
@@ -25,17 +28,47 @@ interface IFarmContract {
         uint64 finishTime_
     ) external;
 
-    function tokensDepositedToFarm(address userAccountOwner, uint128 tokensDeposited, uint128 tokensAmount, uint64 lastRewardTime, address rewardWallet) external;
+    function tokensDepositedToFarm(
+        address userAccountOwner, 
+        uint128 tokensDeposited, 
+        uint128 tokensAmount, 
+        uint128 pendingReward,
+        uint128 rewardPerTokenSum
+    ) external;
 
-    function withdrawPendingReward(address userAccountOwner, uint128 tokenAmount, uint64 lastRewardTime, address rewardWallet) external;
+    function withdrawPendingReward(
+        address userAccountOwner, 
+        uint128 tokenAmount, 
+        uint128 pendingReward,
+        uint128 rewardPerTokenSum, 
+        address rewardWallet
+    ) external;
+    
+    function withdrawWithPendingReward(
+        address userAccountOwner, 
+        uint128 tokensToWithdraw, 
+        uint128 originalTokensAmount, 
+        uint128 pendingReward, 
+        uint128 rewardPerTokenSum, 
+        address rewardWallet
+    ) external;
 
-    function withdrawWithPendingReward(address userAccountOwner, uint128 tokensToWithdraw, uint128 originalTokensAmount, uint64 lastRewardTime, address rewardWallet) external;
+    function updateUserReward(
+        address userAccountOwner,
+        uint128 tokenAmount,
+        uint128 pendingReward,
+        uint128 rewardPerTokenSum
+    ) external;
 
-    function calculateReward(uint128 tokenAmount, uint64 lastRewardTime) external responsible returns(uint128);
+    function calculateReward(
+        uint128 tokenAmount,
+        uint128 pendingReward, 
+        uint128 rewardPerTokenSum
+    ) external responsible returns(uint128);
 
     function deployUserAccount(address userAccountOwner) external;
 
-    function getUserAccountAddress(address userAccountOwner) external responsilbe returns(address);
+    function getUserAccountAddress(address userAccountOwner) external responsible returns(address);
 
     function fetchInfo() external responsible returns(FarmInfo);
     
