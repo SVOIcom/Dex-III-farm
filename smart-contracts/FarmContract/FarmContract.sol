@@ -23,6 +23,9 @@ contract FarmContract is IFarmContract {
     TvmCell userAccountCode;
     TvmCell empty;
 
+    /**
+     * @param ownerAddress Address of owner's ton wallet 
+     */
     constructor(address ownerAddress) public {
         tvm.accept();
         owner = ownerAddress;
@@ -32,32 +35,50 @@ contract FarmContract is IFarmContract {
         return {flag: 64} farmInfo;
     } 
 
+    /**
+     * @param userAccountCode_ Code of user's account. Used for deploy and address calculation
+     */
     function setUserAccountCode(TvmCell userAccountCode_) external override onlyOwner {
         userAccountCode = userAccountCode_;
     }
 
+    /**
+     * @param stackingTIP3Address Root address of token that will be stacked
+     * @param rewardTIP3Address Root address of reward token
+     * @param rewardTIP3Wallet Address of reward wallet 
+     * @param totalReward Total distributed reward
+     * @param startTime Start of farming
+     * @param finishTime Finish of farming
+     */
     function startFarming(
-        address stackingTIP3Address_, 
-        address rewardTIP3Address_, 
-        address rewardTIP3Wallet_, 
+        address stackingTIP3Address, 
+        address rewardTIP3Address, 
+        address rewardTIP3Wallet, 
         uint128 totalReward,
-        uint64 startTime_,
-        uint64 finishTime_
+        uint64 startTime,
+        uint64 finishTime
     ) external override onlyOwner farmInactive {
-        farmInfo.stackingTIP3Root = stackingTIP3Address_;
-        farmInfo.rewardTIP3Root = rewardTIP3Address_;
-        farmInfo.rewardTIP3Wallet = rewardTIP3Wallet_;
+        farmInfo.stackingTIP3Root = stackingTIP3Address;
+        farmInfo.rewardTIP3Root = rewardTIP3Address;
+        farmInfo.rewardTIP3Wallet = rewardTIP3Wallet;
 
         farmInfo.rewardPerTokenSum = 0;
         farmInfo.totalReward = totalReward;
         farmInfo.totalPayout = 0;
         farmInfo.totalStacked = 0;
 
-        farmInfo.startTime = startTime_;
-        farmInfo.finishTime = finishTime_;
-        farmInfo.duration = finishTime_ - startTime_;
+        farmInfo.startTime = startTime;
+        farmInfo.finishTime = finishTime;
+        farmInfo.duration = finishTime - startTime;
     }
 
+    /**
+     * @param userAccountOwner Address of user account owner, used for address calculation
+     * @param tokensDeposited How much tokens were provided
+     * @param tokensAmount How much tokens were stacked before providing
+     * @param pendingReward Reward already obtained by user
+     * @param rewardPerTokenSum Last value of reward per one stacked token summed known by user
+     */
     function tokensDepositedToFarm(
         address userAccountOwner, 
         uint128 tokensDeposited, 
@@ -74,6 +95,13 @@ contract FarmContract is IFarmContract {
 
     }
 
+    /**
+     * @param userAccountOwner Address of user account owner, used for address calculation
+     * @param tokensAmount How much tokens were stacked before providing
+     * @param pendingReward Reward already obtained by user
+     * @param rewardPerTokenSum Last value of reward per one stacked token summed known by user
+     * @param rewardWallet User's reward wallet
+     */
     function withdrawPendingReward(
         address userAccountOwner, 
         uint128 tokenAmount, 
@@ -88,6 +116,14 @@ contract FarmContract is IFarmContract {
         payoutReward(userAccountOwner, rewardWallet, pendingReward + userRewardDelta);
     }
 
+    /**
+     * @param userAccountOwner Address of user account owner, used for address calculation
+     * @param tokensToWithdraw How much tokens user want to withdraw from stacking
+     * @param originalTokensAmount How much tokens were stacked before withdrawing
+     * @param pendingReward Reward already obtained by user
+     * @param rewardPerTokenSum Last value of reward per one stacked token summed known by user
+     * @param rewardWallet User's reward wallet
+     */
     function withdrawWithPendingReward(
         address userAccountOwner, 
         uint128 tokensToWithdraw, 
@@ -105,6 +141,12 @@ contract FarmContract is IFarmContract {
         payoutReward(userAccountOwner, rewardWallet, pendingReward + userRewardDelta);
     }
 
+    /**
+     * @param userAccountOwner Address of user account owner, used for address calculation
+     * @param tokensAmount How much tokens were stacked before providing
+     * @param pendingReward Reward already obtained by user
+     * @param rewardPerTokenSum Last value of reward per one stacked token summed known by user
+     */
     function updateUserReward(
         address userAccountOwner,
         uint128 tokenAmount,
@@ -118,6 +160,10 @@ contract FarmContract is IFarmContract {
         address(userAccountOwner).transfer({value: 64});
     }
 
+    /**
+     * @param stackedAmount How much tokens did user stack
+     * @param rewardPerTokenSum Last value of reward per one stacked token summed known by user
+     */
     function updateReward(
         uint128 stackedAmount, 
         uint128 rewardPerTokenSum
@@ -136,6 +182,10 @@ contract FarmContract is IFarmContract {
         return userRewardDelta;
     }
 
+    /**
+     * @param userToUpdate Which user account to udpate
+     * @param totalUserReward User's total current reward
+     */
     function updateUserInfo(
         address userToUpdate,
         uint128 totalUserReward
@@ -147,6 +197,11 @@ contract FarmContract is IFarmContract {
         );
     }
 
+    /**
+     * @param userAccountOwner Address of user account owner
+     * @param rewardWallet User's reward wallet
+     * @param userReward Reward that will be sent to user
+     */
     function payoutReward(
         address userAccountOwner, 
         address rewardWallet,
@@ -156,19 +211,24 @@ contract FarmContract is IFarmContract {
             farmInfo.totalPayout += userReward;
             ITONTokenWallet(farmInfo.rewardTIP3Wallet).transfer{
                 flag: 64
-            }(
-                rewardWallet,
-                userReward,
-                0,
-                userAccountOwner,
-                true,
-                empty
-            );
+            }({
+                to: rewardWallet,
+                tokens: userReward,
+                grams: 0,
+                send_gas_to: userAccountOwner,
+                notify_receiver: true,
+                payload: empty
+            });
         } else {
             address(userAccountOwner).transfer({flag: 64, value: 0});
         }
     }
 
+    /**
+     * @param tokenAmount How much tokens did user stack
+     * @param pendingReward Reward already obtained by user
+     * @param rewardPerTokenSum Last value of reward per one stacked token summed known by user
+     */
     function calculateReward(
         uint128 tokenAmount,
         uint128 pendingReward, 
@@ -177,6 +237,9 @@ contract FarmContract is IFarmContract {
         return {flag: 64} pendingReward + (farmInfo.rewardPerTokenSum - rewardPerTokenSum) * tokenAmount / improvedPrecision;
     }
 
+    /**
+     * @param userAccountOwner Address of user account owner
+     */
     function deployUserAccount(address userAccountOwner) external override {
         new UserAccount{
             stateInit: _buildUserAccount(userAccountOwner),
@@ -186,14 +249,23 @@ contract FarmContract is IFarmContract {
         }();
     }
 
+    /**
+     * @param userAccountOwner Address of user account owner
+     */
     function _getUserAccountAddress(address userAccountOwner) internal view returns(address) {
         return address.makeAddrStd(0, tvm.hash(_buildUserAccount(userAccountOwner)));
     }
 
+    /**
+     * @param userAccountOwner Address of user account owner
+     */
     function getUserAccountAddress(address userAccountOwner) external override responsible returns(address) {
         return _getUserAccountAddress(userAccountOwner);
     }
 
+    /**
+     * @param userAccountOwner Address of user account owner
+     */
     function _buildUserAccount(address userAccountOwner) internal view returns(TvmCell) {
         return tvm.buildStateInit({
             contr: UserAccount,
@@ -210,6 +282,9 @@ contract FarmContract is IFarmContract {
         _;
     }
 
+    /**
+     * @param userAccountOwner Address of user account owner
+     */
     modifier onlyValidUserAccount(address userAccountOwner) {
         require(msg.sender == _getUserAccountAddress(userAccountOwner), FarmContractErrorCodes.ERROR_INVALID_USER_ACCOUNT);
         _;

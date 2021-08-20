@@ -70,12 +70,12 @@ contract UserAccount is ITokensReceivedCallback, IUserAccount {
         knownTokenRoots[farmInfo_.stackingTIP3Root] = farm;
         IRootTokenContract(farmInfo_.stackingTIP3Root).deployEmptyWallet{
             flag: 64
-        }(
-            0.4 ton,
-            0,
-            address(this),
-            address(this)
-        );
+        }({
+            deploy_grams: 0.4 ton,
+            wallet_public_key: 0,
+            owner_address: address(this),
+            gas_back_address: address(this)
+        });
     }
 
     function receiveTIP3Address(address stackingTIP3Wallet) external onlyKnownTokenRoot {
@@ -84,23 +84,23 @@ contract UserAccount is ITokensReceivedCallback, IUserAccount {
         ITONTokenWallet(stackingTIP3Wallet).setReceiveCallback{
             value: 0.1 ton,
             flag: 1
-        }(
-            address(this),
-            false
-        );
+        }({
+            receive_callback: address(this),
+            allow_non_notifiable: false
+        });
 
         address(owner).transfer({flag: 64, value: 0});
     }
 
     function tokensReceivedCallback(
-        address token_wallet,
+        address, // token_wallet,
         address token_root,
         uint128 amount,
-        uint256 sender_public_key,
-        address sender_address,
+        uint256, // sender_public_key,
+        address, // sender_address,
         address sender_wallet,
         address original_gas_to,
-        uint128 updated_balance,
+        uint128, // updated_balance,
         TvmCell payload
     ) external override {
         TvmSlice s = payload.toSlice();
@@ -108,6 +108,7 @@ contract UserAccount is ITokensReceivedCallback, IUserAccount {
 
         bool messageIsCorrect = 
             msg.sender == farmInfo[farm].stackingTIP3Wallet && 
+            token_root == farmInfo[farm].stackingTIP3Root && 
             sender_wallet == farmInfo[farm].stackingTIP3UserWallet &&
             farmInfo.exists(farm) &&
             farmInfo[farm].start <= uint64(now);
@@ -115,20 +116,26 @@ contract UserAccount is ITokensReceivedCallback, IUserAccount {
         if (!messageIsCorrect) {
             ITONTokenWallet(msg.sender).transfer {
                 value: 64
-            }(
-                sender_wallet,
-                amount,
-                0,
-                original_gas_to,
-                true,
-                payload
-            );
+            }({
+                to: sender_wallet,
+                tokens: amount,
+                grams: 0,
+                send_gas_to: original_gas_to,
+                notify_receiver: true,
+                payload: payload
+            });
         } else {
             farmInfo[farm].stackedTokens = farmInfo[farm].stackedTokens + amount;
 
             IFarmContract(farm).tokensDepositedToFarm{
                 flag: 64
-            }(owner, amount, farmInfo[farm].stackedTokens - amount, farmInfo[farm].pendingReward, farmInfo[farm].rewardPerTokenSum);    
+            }({
+                userAccountOwner: owner, 
+                tokensDeposited: amount, 
+                tokensAmount: farmInfo[farm].stackedTokens - amount, 
+                pendingReward: farmInfo[farm].pendingReward, 
+                rewardPerTokenSum: farmInfo[farm].rewardPerTokenSum
+            });    
         }
     }
 
@@ -137,7 +144,13 @@ contract UserAccount is ITokensReceivedCallback, IUserAccount {
     ) external override onlyOwner {
         IFarmContract(farm).withdrawPendingReward{
             flag: 64
-        }(owner, farmInfo[farm].stackedTokens, farmInfo[farm].pendingReward, farmInfo[farm].rewardPerTokenSum, farmInfo[farm].rewardTIP3Wallet);
+        }({
+            userAccountOwner: owner, 
+            tokenAmount: farmInfo[farm].stackedTokens, 
+            pendingReward: farmInfo[farm].pendingReward, 
+            rewardPerTokenSum: farmInfo[farm].rewardPerTokenSum, 
+            rewardWallet: farmInfo[farm].rewardTIP3Wallet
+        });
     }
 
     function withdrawPartWithPendingReward(
@@ -146,27 +159,18 @@ contract UserAccount is ITokensReceivedCallback, IUserAccount {
     ) external override onlyOwner onlyKnownFarm(farm) onlyActiveFarm(farm) {
         farmInfo[farm].stackedTokens = farmInfo[farm].stackedTokens - tokensToWithdraw;
         
-        ITONTokenWallet(farmInfo[farm].stackingTIP3UserWallet).transfer{
-            value: 0.15 ton
-        }(
-            farmInfo[farm].stackingTIP3UserWallet,
-            tokensToWithdraw,
-            0,
-            owner,
-            true,
-            empty
-        );
+        transferTokensBack(farm, tokensToWithdraw);
 
         IFarmContract(farm).withdrawWithPendingReward{
             flag: 64
-        }(
-            owner, 
-            tokensToWithdraw, 
-            farmInfo[farm].stackedTokens + tokensToWithdraw, 
-            farmInfo[farm].pendingReward, 
-            farmInfo[farm].rewardPerTokenSum, 
-            farmInfo[farm].rewardTIP3Wallet
-        );
+        }({
+            userAccountOwner: owner, 
+            tokensToWithdraw: tokensToWithdraw, 
+            originalTokensAmount: farmInfo[farm].stackedTokens + tokensToWithdraw, 
+            pendingReward: farmInfo[farm].pendingReward, 
+            rewardPerTokenSum: farmInfo[farm].rewardPerTokenSum, 
+            rewardWallet: farmInfo[farm].rewardTIP3Wallet
+        });
     }
 
     function withdrawAllWithPendingReward(
@@ -176,27 +180,31 @@ contract UserAccount is ITokensReceivedCallback, IUserAccount {
         uint128 tokensToWithdraw = farmInfo[farm].stackedTokens;
         farmInfo[farm].stackedTokens = 0;
 
-        ITONTokenWallet(farmInfo[farm].stackingTIP3UserWallet).transfer{
-            value: 0.15 ton
-        }(
-            farmInfo[farm].stackingTIP3UserWallet,
-            tokensToWithdraw,
-            0,
-            owner,
-            true,
-            empty
-        );
+        transferTokensBack(farm, tokensToWithdraw);
 
         IFarmContract(farm).withdrawWithPendingReward{
             flag: 64
-        }(
-            owner, 
-            tokensToWithdraw, 
-            tokensToWithdraw,
-            farmInfo[farm].pendingReward, 
-            farmInfo[farm].rewardPerTokenSum, 
-            farmInfo[farm].rewardTIP3Wallet
-        );
+        }({
+            userAccountOwner: owner, 
+            tokensToWithdraw: tokensToWithdraw, 
+            originalTokensAmount: tokensToWithdraw,
+            pendingReward: farmInfo[farm].pendingReward, 
+            rewardPerTokenSum: farmInfo[farm].rewardPerTokenSum, 
+            rewardWallet: farmInfo[farm].rewardTIP3Wallet
+        });
+    }
+
+    function transferTokensBack(address farm, uint128 tokenAmount) internal view {
+        ITONTokenWallet(farmInfo[farm].stackingTIP3UserWallet).transfer{
+            value: 0.15 ton
+        }({
+            to: farmInfo[farm].stackingTIP3UserWallet,
+            tokens: tokenAmount,
+            grams: 0,
+            send_gas_to: owner,
+            notify_receiver: true,
+            payload: empty
+        });
     }
 
     function updateReward(
@@ -204,12 +212,12 @@ contract UserAccount is ITokensReceivedCallback, IUserAccount {
     ) external override onlyOwner {
         IFarmContract(farm).updateUserReward{
             flag: 64
-        }(
-            owner, 
-            farmInfo[farm].stackedTokens, 
-            farmInfo[farm].rewardPerTokenSum, 
-            farmInfo[farm].pendingReward
-        );
+        }({
+            userAccountOwner: owner, 
+            tokenAmount: farmInfo[farm].stackedTokens, 
+            pendingReward: farmInfo[farm].pendingReward, 
+            rewardPerTokenSum: farmInfo[farm].rewardPerTokenSum
+        });
     }
 
     function udpateRewardInfo(
