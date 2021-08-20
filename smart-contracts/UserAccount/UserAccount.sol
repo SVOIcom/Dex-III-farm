@@ -7,9 +7,7 @@ import '../FarmContract/interfaces/IFarmContract.sol';
 import '../utils/TIP3/interfaces/ITokensReceivedCallback.sol';
 import '../utils/TIP3/interfaces/ITONTokenWallet.sol';
 
-
-// TODO: защита от преждевременного стейка
-// TODO: деплой кошелька для приёма токенов
+// TODO: линейная интерполяция награды
 
 /**
  * Процесс деплоя:
