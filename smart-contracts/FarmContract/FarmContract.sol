@@ -97,7 +97,7 @@ contract FarmContract is IFarmContract {
 
     /**
      * @param userAccountOwner Address of user account owner, used for address calculation
-     * @param tokensAmount How much tokens were stacked before providing
+     * @param tokenAmount How much tokens were stacked before providing
      * @param pendingReward Reward already obtained by user
      * @param rewardPerTokenSum Last value of reward per one stacked token summed known by user
      * @param rewardWallet User's reward wallet
@@ -143,7 +143,7 @@ contract FarmContract is IFarmContract {
 
     /**
      * @param userAccountOwner Address of user account owner, used for address calculation
-     * @param tokensAmount How much tokens were stacked before providing
+     * @param tokenAmount How much tokens were stacked before providing
      * @param pendingReward Reward already obtained by user
      * @param rewardPerTokenSum Last value of reward per one stacked token summed known by user
      */

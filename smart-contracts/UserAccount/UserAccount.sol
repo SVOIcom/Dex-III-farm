@@ -37,11 +37,16 @@ contract UserAccount is ITokensReceivedCallback, IUserAccount {
         tvm.accept();
     }
 
+    /**
+     * @param farm Address of farm contract
+     * @param stackingTIP3UserWallet User's wallet with stacking tokens
+     * @param rewardTIP3Wallet User's wallet for reward payouts
+     */
     function enterFarm(
         address farm, 
         address stackingTIP3UserWallet, 
         address rewardTIP3Wallet
-    ) external override onlyOwner {
+    ) external override onlyOwner onlyUnknownFarm(farm) addressNotZero(farm) addressNotZero(stackingTIP3UserWallet) addressNotZero(rewardTIP3Wallet) {
         farmInfo[farm] = UserFarmInfo({
             stackedTokens: 0,
             pendingReward: 0,
@@ -62,6 +67,9 @@ contract UserAccount is ITokensReceivedCallback, IUserAccount {
         }();
     }
 
+    /**
+     * @param farmInfo_ Information about farm
+     */
     function receiveFarmInfo(FarmInfo farmInfo_) external onlyKnownFarm(msg.sender) {
         address farm = msg.sender;
         farmInfo[farm].stackingTIP3Root = farmInfo_.stackingTIP3Root;
@@ -78,6 +86,9 @@ contract UserAccount is ITokensReceivedCallback, IUserAccount {
         });
     }
 
+    /**
+     * @param stackingTIP3Wallet Wallet required for receiving user's stacking
+     */
     function receiveTIP3Address(address stackingTIP3Wallet) external onlyKnownTokenRoot {
         tvm.accept();
         farmInfo[knownTokenRoots[msg.sender]].stackingTIP3Wallet = stackingTIP3Wallet;
@@ -139,6 +150,9 @@ contract UserAccount is ITokensReceivedCallback, IUserAccount {
         }
     }
 
+    /**
+     * @param farm Address of farm contract
+     */
     function withdrawPendingReward(
         address farm
     ) external override onlyOwner {
@@ -153,6 +167,10 @@ contract UserAccount is ITokensReceivedCallback, IUserAccount {
         });
     }
 
+    /**
+     * @param farm Address of farm contract
+     * @param tokensToWithdraw How much tokens will be withdrawed from stack 
+     */
     function withdrawPartWithPendingReward(
         address farm, 
         uint128 tokensToWithdraw
@@ -173,6 +191,9 @@ contract UserAccount is ITokensReceivedCallback, IUserAccount {
         });
     }
 
+    /**
+     * @param farm Address of farm contract
+     */
     function withdrawAllWithPendingReward(
         address farm
     ) external override onlyOwner onlyKnownFarm(farm) onlyActiveFarm(farm) {
@@ -194,6 +215,10 @@ contract UserAccount is ITokensReceivedCallback, IUserAccount {
         });
     }
 
+    /**
+     * @param farm Address of farm contract
+     * @param tokenAmount Amount of tokens to transfer back to user
+     */
     function transferTokensBack(address farm, uint128 tokenAmount) internal view {
         ITONTokenWallet(farmInfo[farm].stackingTIP3UserWallet).transfer{
             value: 0.15 ton
@@ -207,6 +232,9 @@ contract UserAccount is ITokensReceivedCallback, IUserAccount {
         });
     }
 
+    /**
+     * @param farm Address of farm contract
+     */
     function updateReward(
         address farm
     ) external override onlyOwner {
@@ -220,6 +248,10 @@ contract UserAccount is ITokensReceivedCallback, IUserAccount {
         });
     }
 
+    /**
+     * @param userReward User current reward after update
+     * @param rewardPerTokenSum Last known value of reward per token summed
+     */
     function udpateRewardInfo(
         uint128 userReward, 
         uint128 rewardPerTokenSum
@@ -230,6 +262,9 @@ contract UserAccount is ITokensReceivedCallback, IUserAccount {
         address(owner).transfer({flag: 64, value: 0});
     }
 
+    /**
+     * @param farm Address of farm contract
+     */
     function getUserFarmInfo(
         address farm
     ) external override responsible onlyKnownFarm(farm) returns (UserFarmInfo) {
@@ -240,6 +275,9 @@ contract UserAccount is ITokensReceivedCallback, IUserAccount {
         return {flag: 64} farmInfo;
     }
 
+    /**
+     * @param farm Address of farm contract
+     */
     function createPayload(
         address farm
     ) external override responsible onlyKnownFarm(farm) returns(TvmCell) {
@@ -253,8 +291,19 @@ contract UserAccount is ITokensReceivedCallback, IUserAccount {
         _;
     } 
 
+    /**
+     * @param farm Address of farm contract
+     */
     modifier onlyKnownFarm(address farm) {
         require(farmInfo.exists(farm), UserAccountErrorCodes.ERROR_ONLY_KNOWN_FARM);
+        _;
+    }
+
+    /**
+     * @param farm Address of farm contract
+     */
+    modifier onlyUnknownFarm(address farm) {
+        require(!farmInfo.exists(farm), UserAccountErrorCodes.ERROR_ONLY_UNKNOWN_FARM);
         _;
     }
 
@@ -263,8 +312,19 @@ contract UserAccount is ITokensReceivedCallback, IUserAccount {
         _;
     }
 
+    /**
+     * @param farm Address of farm contract
+     */
     modifier onlyActiveFarm(address farm) {
         require(farmInfo[farm].start <= uint64(now), UserAccountErrorCodes.ERROR_ONLY_ACTIVE_FARM);
+        _;
+    }
+
+    /**
+     * @param addr Address to check
+     */
+    modifier addressNotZero(address addr) {
+        require(addr != address.makeAddrStd(0, 0), UserAccountErrorCodes.ERROR_ZERO_ADDRESS);
         _;
     }
 }
