@@ -66,13 +66,13 @@ interface IFarmContract {
     ) external responsible returns(uint128);
 
     function deployUserAccount(address userAccountOwner) external;
-
-    function getUserAccountAddress(address userAccountOwner) external responsible returns(address);
-
-    function fetchInfo() external responsible returns(FarmInfo);
-
+    
     function endFarming(
         address sendTokensTo,
         uint128 tokenAmount
     ) external;
+
+    function getUserAccountAddress(address userAccountOwner) external responsible returns(address);
+
+    function fetchInfo() external responsible returns(FarmInfo);
 }

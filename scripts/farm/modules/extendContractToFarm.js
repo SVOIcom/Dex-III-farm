@@ -18,16 +18,25 @@ class Farm extends Contract {
 
     /**
      * Initialize farming
-     * @param {Object} startFarmingParams
-     * @param {String} startFarmingParams.stackingTIP3Address
-     * @param {String} startFarmingParams.rewardTIP3Address
-     * @param {String} startFarmingParams.rewardTIP3Wallet
-     * @param {String} startFarmingParams.totalReward
-     * @param {String} startFarmingParams.startTime
-     * @param {String} startFarmingParams.finishTime
+     * @param {Object} params
+     * @param {String} params.stackingTIP3Address
+     * @param {String} params.rewardTIP3Address
+     * @param {String} params.totalReward
+     * @param {String} params.startTime
+     * @param {String} params.finishTime
      * @returns {Promise<Object>}
      */
-    async startFarming({ stackingTIP3Address, rewardTIP3Address, rewardTIP3Wallet, totalReward, startTime, finishTime }) {}
+    async startFarming({ stackingTIP3Address, rewardTIP3Address, totalReward, startTime, finishTime }) {}
+
+    /**
+     * Calculate reward for user
+     * @param {Object} params
+     * @param {String} params.tokenAmount
+     * @param {String} params.pendingReward
+     * @param {String} params.rewardPerTokenSum
+     * @returns {Promise<Object>}
+     */
+    async calculateReward({ tokenAmount, pendingReward, rewardPerTokenSum }) {}
 
     /**
      * Deploy user account
@@ -36,6 +45,14 @@ class Farm extends Contract {
      * @returns {Promise<Object>}
      */
     async deployUserAccount({ userAccountOwner }) {}
+
+    /**
+     * Destroy farm
+     * @param {Object} params 
+     * @param {String} params.sendTokensTo
+     * @param {String} params.tokenAmount
+     */
+    async endFarming({ sendTokensTo, tokenAmount }) {}
 
     /**
      * Get user account address if userAccountOwner address is known
@@ -69,18 +86,29 @@ function extendContractToFarm(contract) {
         });
     }
 
-    contract.startFarming = async function({ stackingTIP3Address, rewardTIP3Address, rewardTIP3Wallet, totalReward, startTime, finishTime }) {
+    contract.startFarming = async function({ stackingTIP3Address, rewardTIP3Address, totalReward, startTime, finishTime }) {
         return await encodeMessageBody({
             contract: contract,
             functionName: 'startFarming',
             input: {
                 stackingTIP3Address: stackingTIP3Address,
                 rewardTIP3Address: rewardTIP3Address,
-                rewardTIP3Wallet: rewardTIP3Wallet,
                 totalReward: totalReward,
                 startTime: startTime,
                 finishTime: finishTime
             }
+        });
+    }
+
+    contract.calculateReward = async function({ tokenAmount, pendingReward, rewardPerTokenSum }) {
+        return await contract.call({
+            method: 'calculateReward',
+            params: {
+                tokenAmount: tokenAmount,
+                pendingReward: pendingReward,
+                rewardPerTokenSum: rewardPerTokenSum
+            },
+            keyPair: contract.keyPair
         });
     }
 
@@ -90,6 +118,17 @@ function extendContractToFarm(contract) {
             functionName: 'deployUserAccount',
             input: {
                 userAccountOwner: userAccountOwner
+            }
+        });
+    }
+
+    contract.endFarming = async function({ sendTokensTo, tokenAmount }) {
+        return await encodeMessageBody({
+            contract: contract,
+            functionName: 'endFarming',
+            input: {
+                sendTokensTo: sendTokensTo,
+                tokenAmount: tokenAmount
             }
         });
     }
