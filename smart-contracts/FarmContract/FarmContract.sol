@@ -2,13 +2,26 @@ pragma ton-solidity >= 0.43.0;
 
 import './interfaces/IFarmContract.sol';
 
+import './libraries/FarmContractCostConstants.sol';
 import './libraries/FarmContractErrorCodes.sol';
 
 import '../UserAccount/UserAccount.sol';
 import '../UserAccount/interfaces/IUserAccount.sol';
 
 import '../utils/TIP3/interfaces/ITONTokenWallet.sol';
+import '../utils/TIP3/interfaces/IRootTokenContract.sol';
 
+/**
+ * Initialization process:
+ * Deploy farm
+ * Set user account code
+ * Set farm parameters (startFarming)
+ * Contract deploys reward wallet for itself
+ * Await deploying reward wallet
+ * Transfer tokens to reward wallet
+ * Await start of farming
+ * After the end of farming + some time -> withdraw remaining tokens and destroy farm (1-2 weeks)
+ */
 
 contract FarmContract is IFarmContract {
 
@@ -45,7 +58,6 @@ contract FarmContract is IFarmContract {
     /**
      * @param stackingTIP3Address Root address of token that will be stacked
      * @param rewardTIP3Address Root address of reward token
-     * @param rewardTIP3Wallet Address of reward wallet 
      * @param totalReward Total distributed reward
      * @param startTime Start of farming
      * @param finishTime Finish of farming
@@ -53,14 +65,13 @@ contract FarmContract is IFarmContract {
     function startFarming(
         address stackingTIP3Address, 
         address rewardTIP3Address, 
-        address rewardTIP3Wallet, 
         uint128 totalReward,
         uint64 startTime,
         uint64 finishTime
     ) external override onlyOwner farmInactive {
         farmInfo.stackingTIP3Root = stackingTIP3Address;
         farmInfo.rewardTIP3Root = rewardTIP3Address;
-        farmInfo.rewardTIP3Wallet = rewardTIP3Wallet;
+        farmInfo.rewardTIP3Wallet = address.makeAddrStd(0, 0);
 
         farmInfo.rewardPerTokenSum = 0;
         farmInfo.totalReward = totalReward;
@@ -70,6 +81,35 @@ contract FarmContract is IFarmContract {
         farmInfo.startTime = startTime;
         farmInfo.finishTime = finishTime;
         farmInfo.duration = finishTime - startTime;
+        deployRewardTIP3Wallet();
+    }
+
+    function deployRewardTIP3Wallet() internal view {
+        IRootTokenContract(farmInfo.rewardTIP3Root).deployEmptyWallet{
+            value: FarmContractCostConstants.sendToDeployTIP3Wallet
+        }({
+            deploy_grams: FarmContractCostConstants.deployTIP3Wallet,
+            wallet_public_key: 0,
+            owner_address: address(this),
+            gas_back_address: owner
+        });
+
+        IRootTokenContract(farmInfo.rewardTIP3Root).getWalletAddress{
+            value: FarmContractCostConstants.sendToGetAddress,
+            callback: this.receiveTIP3RewardWalletAddress
+        }({
+            wallet_public_key: 0,
+            owner_address: address(this)
+        });
+    }
+
+    /**
+     * @param rewardTIP3Wallet Address of wallet used for reward payouts, requires transferring tokens to it
+     */
+    function receiveTIP3RewardWalletAddress(address rewardTIP3Wallet) external onlyRewardTIP3Root {
+        tvm.accept();
+        farmInfo.rewardTIP3Wallet = rewardTIP3Wallet;
+        address(owner).transfer({value: 0, flag: 64});
     }
 
     /**
@@ -157,7 +197,7 @@ contract FarmContract is IFarmContract {
 
         updateUserInfo(msg.sender, pendingReward + userRewardDelta);
 
-        address(userAccountOwner).transfer({value: 64});
+        address(userAccountOwner).transfer({value: 0, flag: 64});
     }
 
     /**
@@ -191,7 +231,7 @@ contract FarmContract is IFarmContract {
         uint128 totalUserReward
     ) internal view {
         IUserAccount(userToUpdate).udpateRewardInfo{
-            value: 0.1 ton
+            value: FarmContractCostConstants.updateUserInfo
         }(
             totalUserReward, farmInfo.rewardPerTokenSum
         );
@@ -244,7 +284,7 @@ contract FarmContract is IFarmContract {
         new UserAccount{
             stateInit: _buildUserAccount(userAccountOwner),
             code: userAccountCode,
-            value: 1 ton,
+            value: FarmContractCostConstants.deployUserAccount,
             flag: 64
         }();
     }
@@ -277,8 +317,37 @@ contract FarmContract is IFarmContract {
         });
     }
 
+    /**
+     * @param sendTokensTo Wallet to send remaining tokens to
+     * @param tokenAmount Amount of tokens remaining on contract balance
+     */
+    function endFarming(
+        address sendTokensTo,
+        uint128 tokenAmount
+    ) external override onlyOwner farmEnded {
+        tvm.accept();
+
+        ITONTokenWallet(farmInfo.rewardTIP3Wallet).transfer{
+            value: 0.15 ton
+        }({
+            to: sendTokensTo,
+            tokens: tokenAmount,
+            grams: 0,
+            send_gas_to: owner,
+            notify_receiver: true,
+            payload: empty
+        });
+
+        address(owner).transfer({value: 0, flag: 128 + 32});
+    }
+
     modifier onlyOwner() {
         require(msg.sender == owner, FarmContractErrorCodes.ERROR_ONLY_OWNER);
+        _;
+    }
+
+    modifier onlyRewardTIP3Root() {
+        require(msg.sender == farmInfo.rewardTIP3Root, FarmContractErrorCodes.ERROR_ONLY_REWARD_TIP3_ROOT);
         _;
     }
 
@@ -297,6 +366,11 @@ contract FarmContract is IFarmContract {
 
     modifier farmInactive() {
         require(farmInfo.startTime == 0, FarmContractErrorCodes.ERROR_ONLY_INACTIVE_FARM);
+        _;
+    }
+
+    modifier farmEnded() {
+        require(uint64(now) > farmInfo.finishTime);
         _;
     }
 }
