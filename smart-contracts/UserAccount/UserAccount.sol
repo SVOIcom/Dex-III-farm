@@ -3,6 +3,7 @@ pragma ton-solidity >= 0.43.0;
 import './interfaces/IUserAccount.sol';
 
 import './libraries/UserAccountErrorCodes.sol';
+import './libraries/UserAccountCostConstants.sol';
 
 import '../FarmContract/interfaces/IFarmContract.sol';
 
@@ -35,6 +36,7 @@ contract UserAccount is ITokensReceivedCallback, IUserAccount {
 
     constructor() public {
         tvm.accept();
+        address(owner).transfer({value: 0, flag: 64});
     }
 
     /**
@@ -76,13 +78,22 @@ contract UserAccount is ITokensReceivedCallback, IUserAccount {
         farmInfo[farm].start = farmInfo_.startTime;
         farmInfo[farm].finish = farmInfo_.finishTime;
         knownTokenRoots[farmInfo_.stackingTIP3Root] = farm;
+
+        IRootTokenContract(farmInfo_.stackingTIP3Root).getWalletAddress{
+            value: UserAccountCostConstants.getWalletAddress,
+            callback: this.receiveTIP3Address
+        }({
+            wallet_public_key: 0,
+            owner_address: address(this)
+        });
+
         IRootTokenContract(farmInfo_.stackingTIP3Root).deployEmptyWallet{
             flag: 64
         }({
-            deploy_grams: 0.4 ton,
+            deploy_grams: UserAccountCostConstants.deployTIP3Wallet,
             wallet_public_key: 0,
             owner_address: address(this),
-            gas_back_address: address(this)
+            gas_back_address: owner
         });
     }
 
@@ -93,8 +104,7 @@ contract UserAccount is ITokensReceivedCallback, IUserAccount {
         tvm.accept();
         farmInfo[knownTokenRoots[msg.sender]].stackingTIP3Wallet = stackingTIP3Wallet;
         ITONTokenWallet(stackingTIP3Wallet).setReceiveCallback{
-            value: 0.1 ton,
-            flag: 1
+            value: UserAccountCostConstants.setReceiveCallback
         }({
             receive_callback: address(this),
             allow_non_notifiable: false
@@ -125,8 +135,8 @@ contract UserAccount is ITokensReceivedCallback, IUserAccount {
             farmInfo[farm].start <= uint64(now);
 
         if (!messageIsCorrect) {
-            ITONTokenWallet(msg.sender).transfer {
-                value: 64
+            ITONTokenWallet(msg.sender).transfer{
+                flag: 64
             }({
                 to: sender_wallet,
                 tokens: amount,
@@ -221,7 +231,7 @@ contract UserAccount is ITokensReceivedCallback, IUserAccount {
      */
     function transferTokensBack(address farm, uint128 tokenAmount) internal view {
         ITONTokenWallet(farmInfo[farm].stackingTIP3UserWallet).transfer{
-            value: 0.15 ton
+            value: UserAccountCostConstants.transferTokens
         }({
             to: farmInfo[farm].stackingTIP3UserWallet,
             tokens: tokenAmount,

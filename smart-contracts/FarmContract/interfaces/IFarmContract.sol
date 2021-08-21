@@ -20,12 +20,11 @@ interface IFarmContract {
     function setUserAccountCode(TvmCell userAccountCode_) external;
 
     function startFarming(
-        address stackingTIP3Address_, 
-        address rewardTIP3Address_, 
-        address rewardTIP3Wallet_, 
+        address stackingTIP3Address, 
+        address rewardTIP3Address, 
         uint128 totalReward,
-        uint64 startTime_,
-        uint64 finishTime_
+        uint64 startTime,
+        uint64 finishTime
     ) external;
 
     function tokensDepositedToFarm(
@@ -71,5 +70,9 @@ interface IFarmContract {
     function getUserAccountAddress(address userAccountOwner) external responsible returns(address);
 
     function fetchInfo() external responsible returns(FarmInfo);
-    
+
+    function endFarming(
+        address sendTokensTo,
+        uint128 tokenAmount
+    ) external;
 }
