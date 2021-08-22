@@ -10,7 +10,7 @@ class UserAccount extends Contract {
      * @param {String} params.stackingTIP3UserWallet
      * @param {String} params.rewardTIP3
      */
-    async enterFarm({ farm, stackingTIP3UserWallet, rewardTIP3 }) {}
+    async enterFarm({ farm, stackingTIP3UserWallet, rewardTIP3Wallet }) {}
 
     /**
      * Withdraw pending reward without removing stack
@@ -65,14 +65,14 @@ class UserAccount extends Contract {
  */
 function extendContractToUserAccount(contract) {
 
-    contract.enterFarm = async function({ farm, stackingTIP3UserWallet, rewardTIP3 }) {
+    contract.enterFarm = async function({ farm, stackingTIP3UserWallet, rewardTIP3Wallet }) {
         return await encodeMessageBody({
             contract: contract,
             functionName: 'enterFarm',
             input: {
                 farm: farm,
                 stackingTIP3UserWallet: stackingTIP3UserWallet,
-                rewardTIP3: rewardTIP3
+                rewardTIP3Wallet: rewardTIP3Wallet
             }
         });
     }

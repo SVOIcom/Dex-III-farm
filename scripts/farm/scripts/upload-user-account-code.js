@@ -1,31 +1,17 @@
 const configuration = require("../../scripts.conf");
-const initializeLocklift = require("../../utils/initializeLocklift");
-const { writeContractData, loadContractData } = require("../../utils/migration/manageContractData");
+const { loadDefaultContaracts } = require("../../utils/loadDefaultContract");
 const { operationFlags } = require("../../utils/transferFlags");
-const { MsigWallet, extendContractToWallet } = require("../../wallet/modules/walletWrapper");
-const { extendContractToFarm, Farm } = require("../modules/extendContractToFarm");
 
 async function main() {
-    let locklift = await initializeLocklift(configuration.pathToLockliftConfig, configuration.network);
+    let contracts = await loadDefaultContaracts();
 
-    /**
-     * @type {MsigWallet}
-     */
-    let msigWallet = await loadContractData(locklift, configuration, `${configuration.network}_MsigWallet.json`);
-    msigWallet = extendContractToWallet(msigWallet);
-    /**
-     * @type {Farm}
-     */
-    let farmContract = await loadContractData(locklift, configuration, `${configuration.network}_FarmContract.json`);
-    farmContract = extendContractToFarm(farmContract);
+    let userAccountContract = await contracts.locklift.factory.getContract('UserAccount', configuration.buildDirectory);
 
-    let userAccountContract = await locklift.factory.getContract('UserAccount', configuration.buildDirectory);
-
-    let codeUploadPayload = await farmContract.setUserAccountCode({
+    let codeUploadPayload = await contracts.farmContract.setUserAccountCode({
         userAccountCode_: userAccountContract.code
     });
 
-    console.log(await msigWallet.transfer({
+    console.log(await contracts.msigWallet.transfer({
         destination: farmContract.address,
         value: locklift.utils.convertCrystal(1, 'nano'),
         flags: operationFlags.FEE_FROM_CONTRACT_BALANCE,

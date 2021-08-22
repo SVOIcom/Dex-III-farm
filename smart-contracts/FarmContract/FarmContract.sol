@@ -1,4 +1,6 @@
 pragma ton-solidity >= 0.43.0;
+pragma AbiHeader expire;
+pragma AbiHeader time;
 
 import './interfaces/IFarmContract.sol';
 
@@ -284,7 +286,7 @@ contract FarmContract is IFarmContract {
         new UserAccount{
             stateInit: _buildUserAccount(userAccountOwner),
             code: userAccountCode,
-            value: FarmContractCostConstants.deployUserAccount,
+            value: 0,
             flag: 64
         }();
     }

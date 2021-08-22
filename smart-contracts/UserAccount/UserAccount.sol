@@ -1,4 +1,7 @@
 pragma ton-solidity >= 0.43.0;
+pragma AbiHeader expire;
+pragma AbiHeader time;
+pragma AbiHeader pubkey;
 
 import './interfaces/IUserAccount.sol';
 
@@ -36,7 +39,7 @@ contract UserAccount is ITokensReceivedCallback, IUserAccount {
 
     constructor() public {
         tvm.accept();
-        address(owner).transfer({value: 0, flag: 64});
+        address(owner).transfer({value: address(this).balance - 0.15 ton});
     }
 
     /**
@@ -79,21 +82,21 @@ contract UserAccount is ITokensReceivedCallback, IUserAccount {
         farmInfo[farm].finish = farmInfo_.finishTime;
         knownTokenRoots[farmInfo_.stackingTIP3Root] = farm;
 
+        IRootTokenContract(farmInfo_.stackingTIP3Root).deployEmptyWallet{
+            value: 0.6 ton
+        }({
+            deploy_grams: UserAccountCostConstants.deployTIP3Wallet,
+            wallet_public_key: 0,
+            owner_address: address(this),
+            gas_back_address: owner
+        });
+
         IRootTokenContract(farmInfo_.stackingTIP3Root).getWalletAddress{
             value: UserAccountCostConstants.getWalletAddress,
             callback: this.receiveTIP3Address
         }({
             wallet_public_key: 0,
             owner_address: address(this)
-        });
-
-        IRootTokenContract(farmInfo_.stackingTIP3Root).deployEmptyWallet{
-            flag: 64
-        }({
-            deploy_grams: UserAccountCostConstants.deployTIP3Wallet,
-            wallet_public_key: 0,
-            owner_address: address(this),
-            gas_back_address: owner
         });
     }
 
@@ -110,7 +113,7 @@ contract UserAccount is ITokensReceivedCallback, IUserAccount {
             allow_non_notifiable: false
         });
 
-        address(owner).transfer({flag: 64, value: 0});
+        address(owner).transfer({value: address(this).balance - 0.15 ton});
     }
 
     function tokensReceivedCallback(
@@ -124,6 +127,7 @@ contract UserAccount is ITokensReceivedCallback, IUserAccount {
         uint128, // updated_balance,
         TvmCell payload
     ) external override {
+        tvm.rawReserve(msg.value, 2);
         TvmSlice s = payload.toSlice();
         address farm = s.decode(address);
 
@@ -277,7 +281,7 @@ contract UserAccount is ITokensReceivedCallback, IUserAccount {
      */
     function getUserFarmInfo(
         address farm
-    ) external override responsible onlyKnownFarm(farm) returns (UserFarmInfo) {
+    ) external override responsible returns (UserFarmInfo) {
         return {flag: 64} farmInfo[farm];
     }
 

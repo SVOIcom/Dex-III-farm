@@ -1,52 +1,31 @@
-const configuration = require("../../scripts.conf");
-const initializeLocklift = require("../../utils/initializeLocklift");
-const { loadContractData, writeContractData } = require("../../utils/migration/manageContractData");
+const { loadDefaultContaracts } = require("../../utils/loadDefaultContract");
+const { writeContractData } = require("../../utils/migration/manageContractData");
 const { operationFlags } = require("../../utils/transferFlags");
-const { extendContractToWallet, MsigWallet } = require("../../wallet/modules/walletWrapper");
-const { extendContractToFarm, Farm } = require("../modules/extendContractToFarm");
-const { UserAccount, extendContractToUserAccount } = require("../modules/extendContractToUser");
 
 async function main() {
-    let locklift = await initializeLocklift(configuration.pathToLockliftConfig, configuration.network);
+    let contracts = loadDefaultContaracts();
 
-    /**
-     * @type {MsigWallet}
-     */
-    let msigWallet = await loadContractData(locklift, configuration, `${configuration.network}_MsigWallet.json`);
-    msigWallet = extendContractToWallet(msigWallet);
+    contracts.userAccountContract.setKeyPair(contracts.msigWallet.keyPair);
 
-    /**
-     * @type {Farm}
-     */
-    let farmContract = await loadContractData(locklift, configuration, `${configuration.network}_FarmContract.json`);
-    farmContract = extendContractToFarm(farmContract);
-
-    /**
-     * @type {UserAccount}
-     */
-    let userAccountContract = await locklift.factory.getContract('UserAccount', configuration.buildDirectory);
-    userAccountContract = extendContractToUserAccount(userAccountContract);
-    userAccountContract.setKeyPair(msigWallet.keyPair);
-
-    let userAccountDeployPayload = await farmContract.deployUserAccount({
+    let userAccountDeployPayload = await contracts.farmContract.deployUserAccount({
         userAccountOwner: msigWallet.address
     });
 
-    await msigWallet.transfer({
-        destination: farmContract.address,
-        value: locklift.utils.convertCrystal(2, 'nano'),
+    await contracts.msigWallet.transfer({
+        destination: contracts.farmContract.address,
+        value: contracts.locklift.utils.convertCrystal(2, 'nano'),
         flags: operationFlags.FEE_FROM_CONTRACT_BALANCE,
         bounce: false,
         payload: userAccountDeployPayload
     });
 
-    let userAccountAddress = await farmContract.getUserAccountAddress({
-        userAccountOwner: msigWallet.address
+    let userAccountAddress = await contracts.farmContract.getUserAccountAddress({
+        userAccountOwner: contracts.msigWallet.address
     });
-    userAccountContract.setAddress(userAccountAddress);
-    userAccountContract.setKeyPair(msigWallet.keyPair);
+    contracts.userAccountContract.setAddress(userAccountAddress);
+    contracts.userAccountContract.setKeyPair(msigWallet.keyPair);
 
-    writeContractData(userAccountContract, 'AccountContract.json');
+    writeContractData(contracts.userAccountContract, 'UserAccount.json');
 }
 
 main().then(
