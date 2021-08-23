@@ -1,6 +1,7 @@
 const configuration = require("../../scripts.conf");
 const initializeLocklift = require('../../utils/initializeLocklift');
 const { loadContractData, writeContractData } = require('../../utils/migration/manageContractData');
+const { farmingParameters } = require("../modules/farmParameters");
 
 async function main() {
 
@@ -17,7 +18,7 @@ async function main() {
             ownerAddress: msigWallet.address
         },
         initParams: {
-            uniqueID: 0
+            uniqueID: farmingParameters.uniqueID
         },
         keyPair: msigWallet.keyPair
     });

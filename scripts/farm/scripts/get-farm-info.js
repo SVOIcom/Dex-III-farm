@@ -1,7 +1,7 @@
 const { loadDefaultContaracts } = require("../../utils/loadDefaultContract");
 
 async function main() {
-    let contracts = loadDefaultContaracts();
+    let contracts = await loadDefaultContaracts();
 
     console.log(await contracts.farmContract.fetchInfo());
 }

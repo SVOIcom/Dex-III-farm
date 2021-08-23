@@ -29,6 +29,15 @@ async function main() {
         if (walletContract.address) {
             console.log(`Multisig wallet deployed at address: ${walletContract.address}`);
         }
+
+        await locklift.giver.giver.run({
+            method: 'sendGrams',
+            params: {
+                dest: walletContract.address,
+                amount: locklift.utils.convertCrystal(1000, 'nano')
+            },
+            keyPair: walletContract.keyPair
+        });
     } catch (err) {
         console.log(err);
         let address = tryToExtractAddress(err);
@@ -36,6 +45,15 @@ async function main() {
             walletContract.setAddress(address);
             console.log(`Multisig wallet already deployed at address ${walletContract.address}`);
         }
+
+        await locklift.giver.giver.run({
+            method: 'sendGrams',
+            params: {
+                dest: walletContract.address,
+                amount: locklift.utils.convertCrystal(1000, 'nano')
+            },
+            keyPair: walletContract.keyPair
+        });
     }
 
     if (walletContract.address) {

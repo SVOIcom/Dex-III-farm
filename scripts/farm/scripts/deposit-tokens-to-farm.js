@@ -7,7 +7,7 @@ const { userParams } = require("../modules/userFarmParameters");
 
 
 async function main() {
-    let contracts = loadDefaultContaracts();
+    let contracts = await loadDefaultContaracts();
 
     /**
      * @type {TIP3Wallet}
@@ -36,13 +36,13 @@ async function main() {
 
     await contracts.msigWallet.transfer({
         destination: tip3WalletContract.address,
-        value: contracts.locklift.utils.convertCrystal(1, 'nano'),
+        value: contracts.locklift.utils.convertCrystal(0.5, 'nano'),
         flags: operationFlags.FEE_FROM_CONTRACT_BALANCE,
         bounce: true,
         payload: tip3Payload
     });
 
-    console.log(await userAccountContract.getUserFarmInfo({
+    console.log(await contracts.userAccountContract.getUserFarmInfo({
         farm: contracts.farmContract.address
     }));
 }

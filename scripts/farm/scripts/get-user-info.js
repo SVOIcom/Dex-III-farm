@@ -8,7 +8,7 @@ async function main() {
     console.log(await contracts.userAccountContract.call({
         method: 'getAllUserFarmInfo',
         params: {},
-        keyPair: userAccountContract.keyPair
+        keyPair: contracts.userAccountContract.keyPair
     }));
 
     console.log(await contracts.userAccountContract.getUserFarmInfo({

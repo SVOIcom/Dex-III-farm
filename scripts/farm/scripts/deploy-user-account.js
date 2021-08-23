@@ -3,12 +3,12 @@ const { writeContractData } = require("../../utils/migration/manageContractData"
 const { operationFlags } = require("../../utils/transferFlags");
 
 async function main() {
-    let contracts = loadDefaultContaracts();
+    let contracts = await loadDefaultContaracts();
 
     contracts.userAccountContract.setKeyPair(contracts.msigWallet.keyPair);
 
     let userAccountDeployPayload = await contracts.farmContract.deployUserAccount({
-        userAccountOwner: msigWallet.address
+        userAccountOwner: contracts.msigWallet.address
     });
 
     await contracts.msigWallet.transfer({
@@ -23,7 +23,7 @@ async function main() {
         userAccountOwner: contracts.msigWallet.address
     });
     contracts.userAccountContract.setAddress(userAccountAddress);
-    contracts.userAccountContract.setKeyPair(msigWallet.keyPair);
+    contracts.userAccountContract.setKeyPair(contracts.msigWallet.keyPair);
 
     writeContractData(contracts.userAccountContract, 'UserAccount.json');
 }

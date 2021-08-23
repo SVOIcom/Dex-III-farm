@@ -33,7 +33,7 @@ contract FarmContract is IFarmContract {
 
     FarmInfo farmInfo;
 
-    uint128 constant public improvedPrecision = 1e18;
+    uint128 constant public improvedPrecision = 1e9;
 
     TvmCell userAccountCode;
     TvmCell empty;
@@ -71,6 +71,7 @@ contract FarmContract is IFarmContract {
         uint64 startTime,
         uint64 finishTime
     ) external override onlyOwner farmInactive {
+        tvm.accept();
         farmInfo.stackingTIP3Root = stackingTIP3Address;
         farmInfo.rewardTIP3Root = rewardTIP3Address;
         farmInfo.rewardTIP3Wallet = address.makeAddrStd(0, 0);
@@ -126,15 +127,15 @@ contract FarmContract is IFarmContract {
         uint128 tokensDeposited, 
         uint128 tokensAmount, 
         uint128 pendingReward,
-        uint128 rewardPerTokenSum
+        uint256 rewardPerTokenSum
     ) external override onlyValidUserAccount(userAccountOwner) {
-        
-        (uint128 userRewardDelta) = updateReward(tokensAmount - tokensDeposited, rewardPerTokenSum);
-        
-        farmInfo.totalStacked += tokensDeposited;
+        tvm.rawReserve(msg.value, 2);
 
-        updateUserInfo(msg.sender, userRewardDelta + pendingReward);
+        farmInfo.totalStacked = farmInfo.totalStacked + tokensDeposited;
+        
+        (uint128 userRewardDelta) = updateReward(tokensAmount, rewardPerTokenSum);
 
+        updateUserInfo(msg.sender, userRewardDelta + pendingReward, 0);
     }
 
     /**
@@ -142,20 +143,18 @@ contract FarmContract is IFarmContract {
      * @param tokenAmount How much tokens were stacked before providing
      * @param pendingReward Reward already obtained by user
      * @param rewardPerTokenSum Last value of reward per one stacked token summed known by user
-     * @param rewardWallet User's reward wallet
      */
     function withdrawPendingReward(
         address userAccountOwner, 
         uint128 tokenAmount, 
         uint128 pendingReward,
-        uint128 rewardPerTokenSum, 
-        address rewardWallet
+        uint256 rewardPerTokenSum
     ) external override onlyValidUserAccount(userAccountOwner) {
+        tvm.rawReserve(msg.value, 2);
+
         (uint128 userRewardDelta) = updateReward(tokenAmount, rewardPerTokenSum);
 
-        updateUserInfo(msg.sender, 0);
-
-        payoutReward(userAccountOwner, rewardWallet, pendingReward + userRewardDelta);
+        updateUserInfo(msg.sender, 0, pendingReward + userRewardDelta);
     }
 
     /**
@@ -164,23 +163,21 @@ contract FarmContract is IFarmContract {
      * @param originalTokensAmount How much tokens were stacked before withdrawing
      * @param pendingReward Reward already obtained by user
      * @param rewardPerTokenSum Last value of reward per one stacked token summed known by user
-     * @param rewardWallet User's reward wallet
      */
     function withdrawWithPendingReward(
         address userAccountOwner, 
         uint128 tokensToWithdraw, 
         uint128 originalTokensAmount, 
         uint128 pendingReward, 
-        uint128 rewardPerTokenSum, 
-        address rewardWallet
-    ) external override onlyValidUserAccount(userAccountOwner)  {
+        uint256 rewardPerTokenSum
+    ) external override onlyValidUserAccount(userAccountOwner) {
+        tvm.rawReserve(msg.value, 2);
+
         (uint128 userRewardDelta) = updateReward(originalTokensAmount, rewardPerTokenSum);
         
         farmInfo.totalStacked -= tokensToWithdraw;
 
-        updateUserInfo(msg.sender, 0);
-
-        payoutReward(userAccountOwner, rewardWallet, pendingReward + userRewardDelta);
+        updateUserInfo(msg.sender, 0, pendingReward + userRewardDelta);
     }
 
     /**
@@ -193,13 +190,12 @@ contract FarmContract is IFarmContract {
         address userAccountOwner,
         uint128 tokenAmount,
         uint128 pendingReward,
-        uint128 rewardPerTokenSum
+        uint256 rewardPerTokenSum
     ) external override onlyValidUserAccount(userAccountOwner) {
+        tvm.rawReserve(msg.value, 2);
         (uint128 userRewardDelta) = updateReward(tokenAmount, rewardPerTokenSum);
 
-        updateUserInfo(msg.sender, pendingReward + userRewardDelta);
-
-        address(userAccountOwner).transfer({value: 0, flag: 64});
+        updateUserInfo(msg.sender, pendingReward + userRewardDelta, 0);
     }
 
     /**
@@ -208,62 +204,66 @@ contract FarmContract is IFarmContract {
      */
     function updateReward(
         uint128 stackedAmount, 
-        uint128 rewardPerTokenSum
+        uint256 rewardPerTokenSum
     ) internal returns (uint128) {
-        uint64 currentTime = uint64(now);
-        uint64 dt = currentTime - farmInfo.lastRPTSupdate;
+        farmInfo.rewardPerTokenSum += calculateRPTDelta();
+        farmInfo.lastRPTSupdate = uint64(now);
 
-        if (dt == 0) {
-            uint128 rewardPerToken = improvedPrecision * dt * farmInfo.totalReward / farmInfo.duration / farmInfo.totalStacked;
-
-            farmInfo.rewardPerTokenSum += rewardPerToken;
-            farmInfo.lastRPTSupdate = currentTime;
-        }
-
-        uint128 userRewardDelta = (farmInfo.rewardPerTokenSum - rewardPerTokenSum) * stackedAmount / improvedPrecision;
+        uint128 userRewardDelta = rewardPerTokenSum == 0 ? 0 : uint128((farmInfo.rewardPerTokenSum - rewardPerTokenSum) * stackedAmount / improvedPrecision);
         return userRewardDelta;
+    }
+
+    function calculateRPTDelta() internal view returns (uint256) {
+        if (uint64(now) < farmInfo.finishTime) {
+            uint64 dt = math.min(uint64(now), farmInfo.finishTime) - math.max(farmInfo.startTime, farmInfo.lastRPTSupdate);
+            uint256 rewardPerToken = improvedPrecision * dt * farmInfo.totalReward / farmInfo.duration / farmInfo.totalStacked;
+            return rewardPerToken;
+        } else {
+            return 0;
+        }
     }
 
     /**
      * @param userToUpdate Which user account to udpate
      * @param totalUserReward User's total current reward
+     * @param rewardToPayout Reward to payout to user
      */
     function updateUserInfo(
         address userToUpdate,
-        uint128 totalUserReward
+        uint128 totalUserReward,
+        uint128 rewardToPayout
     ) internal view {
         IUserAccount(userToUpdate).udpateRewardInfo{
-            value: FarmContractCostConstants.updateUserInfo
-        }(
-            totalUserReward, farmInfo.rewardPerTokenSum
-        );
+            flag: 64
+        }({
+            userReward: totalUserReward,
+            rewardPerTokenSum: farmInfo.rewardPerTokenSum,
+            tokensToPayout: rewardToPayout
+        });
     }
 
     /**
      * @param userAccountOwner Address of user account owner
-     * @param rewardWallet User's reward wallet
+     * @param rewardTIP3Wallet User's reward wallet
      * @param userReward Reward that will be sent to user
      */
     function payoutReward(
-        address userAccountOwner, 
-        address rewardWallet,
+        address userAccountOwner,
+        address rewardTIP3Wallet,
         uint128 userReward
-    ) internal {
-        if (userReward != 0) {
-            farmInfo.totalPayout += userReward;
-            ITONTokenWallet(farmInfo.rewardTIP3Wallet).transfer{
-                flag: 64
-            }({
-                to: rewardWallet,
-                tokens: userReward,
-                grams: 0,
-                send_gas_to: userAccountOwner,
-                notify_receiver: true,
-                payload: empty
-            });
-        } else {
-            address(userAccountOwner).transfer({flag: 64, value: 0});
-        }
+    ) external override onlyValidUserAccount(userAccountOwner) {
+        tvm.rawReserve(msg.value, 2);
+        farmInfo.totalPayout += userReward;
+        ITONTokenWallet(farmInfo.rewardTIP3Wallet).transfer{
+            flag: 64
+        }({
+            to: rewardTIP3Wallet,
+            tokens: userReward,
+            grams: 0,
+            send_gas_to: userAccountOwner,
+            notify_receiver: true,
+            payload: empty
+        });
     }
 
     /**
@@ -274,9 +274,9 @@ contract FarmContract is IFarmContract {
     function calculateReward(
         uint128 tokenAmount,
         uint128 pendingReward, 
-        uint128 rewardPerTokenSum
+        uint256 rewardPerTokenSum
     ) external override responsible returns(uint128) {
-        return {flag: 64} pendingReward + (farmInfo.rewardPerTokenSum - rewardPerTokenSum) * tokenAmount / improvedPrecision;
+        return {flag: 64} uint128(pendingReward + (farmInfo.rewardPerTokenSum + calculateRPTDelta() - rewardPerTokenSum) * tokenAmount / improvedPrecision);
     }
 
     /**
@@ -321,11 +321,9 @@ contract FarmContract is IFarmContract {
 
     /**
      * @param sendTokensTo Wallet to send remaining tokens to
-     * @param tokenAmount Amount of tokens remaining on contract balance
      */
     function endFarming(
-        address sendTokensTo,
-        uint128 tokenAmount
+        address sendTokensTo
     ) external override onlyOwner farmEnded {
         tvm.accept();
 
@@ -333,7 +331,7 @@ contract FarmContract is IFarmContract {
             value: 0.15 ton
         }({
             to: sendTokensTo,
-            tokens: tokenAmount,
+            tokens: farmInfo.totalReward - farmInfo.totalPayout,
             grams: 0,
             send_gas_to: owner,
             notify_receiver: true,

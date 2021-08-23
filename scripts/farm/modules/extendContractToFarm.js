@@ -50,9 +50,8 @@ class Farm extends Contract {
      * Destroy farm
      * @param {Object} params 
      * @param {String} params.sendTokensTo
-     * @param {String} params.tokenAmount
      */
-    async endFarming({ sendTokensTo, tokenAmount }) {}
+    async endFarming({ sendTokensTo }) {}
 
     /**
      * Get user account address if userAccountOwner address is known
@@ -122,13 +121,12 @@ function extendContractToFarm(contract) {
         });
     }
 
-    contract.endFarming = async function({ sendTokensTo, tokenAmount }) {
+    contract.endFarming = async function({ sendTokensTo }) {
         return await encodeMessageBody({
             contract: contract,
             functionName: 'endFarming',
             input: {
-                sendTokensTo: sendTokensTo,
-                tokenAmount: tokenAmount
+                sendTokensTo: sendTokensTo
             }
         });
     }

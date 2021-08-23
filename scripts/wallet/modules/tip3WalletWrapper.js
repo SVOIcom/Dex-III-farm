@@ -22,7 +22,7 @@ class TIP3Wallet extends Contract {
 function extendContractToTIP3Wallet(contract) {
 
     contract.transfer = async function({ to, tokens, grams, send_gas_to, notify_receiver, payload }) {
-        encodeMessageBody({
+        return await encodeMessageBody({
             contract: contract,
             functionName: 'transfer',
             input: {

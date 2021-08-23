@@ -1,23 +1,26 @@
-const configuration = require("../../scripts.conf");
 const { loadDefaultContaracts } = require("../../utils/loadDefaultContract");
 const { operationFlags } = require("../../utils/transferFlags");
+const { userParams } = require("../modules/userFarmParameters");
 
 async function main() {
     let contracts = await loadDefaultContaracts();
 
-    let userAccountContract = await contracts.locklift.factory.getContract('UserAccount', configuration.buildDirectory);
-
-    let codeUploadPayload = await contracts.farmContract.setUserAccountCode({
-        userAccountCode_: userAccountContract.code
+    let withdrawPayload = await contracts.userAccountContract.withdrawPartWithPendingReward({
+        farm: contracts.farmContract.address,
+        tokensToWithdraw: userParams.tokensForPartWithdraw
     });
 
     await contracts.msigWallet.transfer({
-        destination: contracts.farmContract.address,
+        destination: contracts.userAccountContract.address,
         value: contracts.locklift.utils.convertCrystal(1, 'nano'),
         flags: operationFlags.FEE_FROM_CONTRACT_BALANCE,
         bounce: false,
-        payload: codeUploadPayload
+        payload: withdrawPayload
     });
+
+    console.log(await contracts.userAccountContract.getUserFarmInfo({
+        farm: contracts.farmContract.address
+    }));
 }
 
 main().then(

@@ -5,7 +5,7 @@ struct FarmInfo {
     address rewardTIP3Root;
     address rewardTIP3Wallet;
 
-    uint128 rewardPerTokenSum;
+    uint256 rewardPerTokenSum;
     uint128 totalReward;
     uint128 totalPayout;
     uint128 totalStacked;
@@ -32,15 +32,14 @@ interface IFarmContract {
         uint128 tokensDeposited, 
         uint128 tokensAmount, 
         uint128 pendingReward,
-        uint128 rewardPerTokenSum
+        uint256 rewardPerTokenSum
     ) external;
 
     function withdrawPendingReward(
         address userAccountOwner, 
         uint128 tokenAmount, 
         uint128 pendingReward,
-        uint128 rewardPerTokenSum, 
-        address rewardWallet
+        uint256 rewardPerTokenSum
     ) external;
     
     function withdrawWithPendingReward(
@@ -48,28 +47,32 @@ interface IFarmContract {
         uint128 tokensToWithdraw, 
         uint128 originalTokensAmount, 
         uint128 pendingReward, 
-        uint128 rewardPerTokenSum, 
-        address rewardWallet
+        uint256 rewardPerTokenSum
     ) external;
 
     function updateUserReward(
         address userAccountOwner,
         uint128 tokenAmount,
         uint128 pendingReward,
-        uint128 rewardPerTokenSum
+        uint256 rewardPerTokenSum
     ) external;
 
     function calculateReward(
         uint128 tokenAmount,
         uint128 pendingReward, 
-        uint128 rewardPerTokenSum
+        uint256 rewardPerTokenSum
     ) external responsible returns(uint128);
+
+    function payoutReward(
+        address userAccountOwner,
+        address rewardTIP3Wallet,
+        uint128 userReward
+    ) external;
 
     function deployUserAccount(address userAccountOwner) external;
     
     function endFarming(
-        address sendTokensTo,
-        uint128 tokenAmount
+        address sendTokensTo
     ) external;
 
     function getUserAccountAddress(address userAccountOwner) external responsible returns(address);

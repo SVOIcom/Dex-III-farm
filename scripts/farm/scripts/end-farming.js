@@ -1,19 +1,21 @@
 const { loadDefaultContaracts } = require("../../utils/loadDefaultContract");
 const { operationFlags } = require("../../utils/transferFlags");
-const { farmingParameters } = require("../modules/farmParameters");
+const { userParams } = require("../modules/userFarmParameters");
 
 async function main() {
     let contracts = await loadDefaultContaracts();
 
-    let startFarmPayload = await contracts.farmContract.startFarming(farmingParameters);
+    let endFarmingPayload = await contracts.farmContract.endFarming({
+        sendTokensTo: userParams.rewardTIP3Wallet
+    });
 
-    await contracts.msigWallet.transfer({
+    console.log(await contracts.msigWallet.transfer({
         destination: contracts.farmContract.address,
-        value: contracts.locklift.utils.convertCrystal(2, 'nano'),
+        value: contracts.locklift.utils.convertCrystal(1, 'nano'),
         flags: operationFlags.FEE_FROM_CONTRACT_BALANCE,
         bounce: false,
-        payload: startFarmPayload
-    });
+        payload: endFarmingPayload
+    }));
 }
 
 main().then(

@@ -90,7 +90,7 @@ function extendContractToUserAccount(contract) {
     contract.withdrawPartWithPendingReward = async function({ farm, tokensToWithdraw }) {
         return await encodeMessageBody({
             contract: contract,
-            functionName: 'withdrawPartWithPendignReward',
+            functionName: 'withdrawPartWithPendingReward',
             input: {
                 farm: farm,
                 tokensToWithdraw: tokensToWithdraw
@@ -132,6 +132,16 @@ function extendContractToUserAccount(contract) {
         return await contract.call({
             method: 'getAllUserFarmInfo',
             params: {},
+            keyPair: contract.keyPair
+        });
+    }
+
+    contract.createPayload = async function({ farm }) {
+        return await contract.call({
+            method: 'createPayload',
+            params: {
+                farm
+            },
             keyPair: contract.keyPair
         });
     }
