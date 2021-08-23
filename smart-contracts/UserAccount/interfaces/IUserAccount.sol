@@ -3,7 +3,7 @@ pragma ton-solidity >= 0.43.0;
 struct UserFarmInfo {
     uint128 stackedTokens;
     uint128 pendingReward;
-    uint128 rewardPerTokenSum;
+    uint256 rewardPerTokenSum;
 
     address stackingTIP3Wallet;
     address stackingTIP3UserWallet;
@@ -40,7 +40,8 @@ interface IUserAccount {
 
     function udpateRewardInfo(
         uint128 userReward, 
-        uint128 rewardPerTokenSum
+        uint256 rewardPerTokenSum,
+        uint128 tokensToPayout
     ) external;
 
     function getUserFarmInfo(

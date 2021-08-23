@@ -9,13 +9,14 @@ const Contract = require('locklift/locklift/contract');
 class MsigWallet extends Contract {
     /**
      * Transfer TONs to specified destination
-     * @param {String} destination 
-     * @param {String} value 
-     * @param {Number} flags 
-     * @param {Boolean} bounce
-     * @param {String} payload 
+     * @param {Object} params
+     * @param {String} params.destination 
+     * @param {String} params.value 
+     * @param {Number} params.flags 
+     * @param {Boolean} params.bounce
+     * @param {String} params.payload 
      */
-    async transfer(destination, value, flags, bounce, payload) {}
+    async transfer({ destination, value, flags, bounce, payload }) {}
 }
 
 /**
@@ -24,7 +25,7 @@ class MsigWallet extends Contract {
  * @returns {MsigWallet}
  */
 function extendContractToWallet(contract) {
-    contract.transfer = async function(destination, value, flags, bounce, payload) {
+    contract.transfer = async function({ destination, value, flags, bounce, payload }) {
         return await contract.run({
             method: 'sendTransaction',
             params: {

@@ -1,0 +1,132 @@
+{
+	"ABI version": 2,
+	"header": ["pubkey", "time", "expire"],
+	"functions": [
+		{
+			"name": "constructor",
+			"inputs": [
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "enterFarm",
+			"inputs": [
+				{"name":"farm","type":"address"},
+				{"name":"stackingTIP3UserWallet","type":"address"},
+				{"name":"rewardTIP3Wallet","type":"address"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "receiveFarmInfo",
+			"inputs": [
+				{"components":[{"name":"stackingTIP3Root","type":"address"},{"name":"rewardTIP3Root","type":"address"},{"name":"rewardTIP3Wallet","type":"address"},{"name":"rewardPerTokenSum","type":"uint256"},{"name":"totalReward","type":"uint128"},{"name":"totalPayout","type":"uint128"},{"name":"totalStacked","type":"uint128"},{"name":"startTime","type":"uint64"},{"name":"finishTime","type":"uint64"},{"name":"duration","type":"uint64"},{"name":"lastRPTSupdate","type":"uint64"}],"name":"farmInfo_","type":"tuple"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "receiveTIP3Address",
+			"inputs": [
+				{"name":"stackingTIP3Wallet","type":"address"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "tokensReceivedCallback",
+			"inputs": [
+				{"name":"value0","type":"address"},
+				{"name":"token_root","type":"address"},
+				{"name":"amount","type":"uint128"},
+				{"name":"value3","type":"uint256"},
+				{"name":"value4","type":"address"},
+				{"name":"sender_wallet","type":"address"},
+				{"name":"original_gas_to","type":"address"},
+				{"name":"value7","type":"uint128"},
+				{"name":"payload","type":"cell"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "withdrawPendingReward",
+			"inputs": [
+				{"name":"farm","type":"address"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "withdrawPartWithPendingReward",
+			"inputs": [
+				{"name":"farm","type":"address"},
+				{"name":"tokensToWithdraw","type":"uint128"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "withdrawAllWithPendingReward",
+			"inputs": [
+				{"name":"farm","type":"address"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "updateReward",
+			"inputs": [
+				{"name":"farm","type":"address"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "udpateRewardInfo",
+			"inputs": [
+				{"name":"userReward","type":"uint128"},
+				{"name":"rewardPerTokenSum","type":"uint256"},
+				{"name":"tokensToPayout","type":"uint128"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "getUserFarmInfo",
+			"inputs": [
+				{"name":"_answer_id","type":"uint32"},
+				{"name":"farm","type":"address"}
+			],
+			"outputs": [
+				{"components":[{"name":"stackedTokens","type":"uint128"},{"name":"pendingReward","type":"uint128"},{"name":"rewardPerTokenSum","type":"uint256"},{"name":"stackingTIP3Wallet","type":"address"},{"name":"stackingTIP3UserWallet","type":"address"},{"name":"stackingTIP3Root","type":"address"},{"name":"rewardTIP3Wallet","type":"address"},{"name":"start","type":"uint64"},{"name":"finish","type":"uint64"}],"name":"value0","type":"tuple"}
+			]
+		},
+		{
+			"name": "getAllUserFarmInfo",
+			"inputs": [
+				{"name":"_answer_id","type":"uint32"}
+			],
+			"outputs": [
+				{"components":[{"name":"stackedTokens","type":"uint128"},{"name":"pendingReward","type":"uint128"},{"name":"rewardPerTokenSum","type":"uint256"},{"name":"stackingTIP3Wallet","type":"address"},{"name":"stackingTIP3UserWallet","type":"address"},{"name":"stackingTIP3Root","type":"address"},{"name":"rewardTIP3Wallet","type":"address"},{"name":"start","type":"uint64"},{"name":"finish","type":"uint64"}],"name":"value0","type":"map(address,tuple)"}
+			]
+		},
+		{
+			"name": "createPayload",
+			"inputs": [
+				{"name":"_answer_id","type":"uint32"},
+				{"name":"farm","type":"address"}
+			],
+			"outputs": [
+				{"name":"value0","type":"cell"}
+			]
+		}
+	],
+	"data": [
+		{"key":1,"name":"owner","type":"address"}
+	],
+	"events": [
+	]
+}

@@ -1,0 +1,150 @@
+{
+	"ABI version": 2,
+	"header": ["time", "expire"],
+	"functions": [
+		{
+			"name": "constructor",
+			"inputs": [
+				{"name":"ownerAddress","type":"address"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "fetchInfo",
+			"inputs": [
+				{"name":"_answer_id","type":"uint32"}
+			],
+			"outputs": [
+				{"components":[{"name":"stackingTIP3Root","type":"address"},{"name":"rewardTIP3Root","type":"address"},{"name":"rewardTIP3Wallet","type":"address"},{"name":"rewardPerTokenSum","type":"uint256"},{"name":"totalReward","type":"uint128"},{"name":"totalPayout","type":"uint128"},{"name":"totalStacked","type":"uint128"},{"name":"startTime","type":"uint64"},{"name":"finishTime","type":"uint64"},{"name":"duration","type":"uint64"},{"name":"lastRPTSupdate","type":"uint64"}],"name":"value0","type":"tuple"}
+			]
+		},
+		{
+			"name": "setUserAccountCode",
+			"inputs": [
+				{"name":"userAccountCode_","type":"cell"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "startFarming",
+			"inputs": [
+				{"name":"stackingTIP3Address","type":"address"},
+				{"name":"rewardTIP3Address","type":"address"},
+				{"name":"totalReward","type":"uint128"},
+				{"name":"startTime","type":"uint64"},
+				{"name":"finishTime","type":"uint64"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "receiveTIP3RewardWalletAddress",
+			"inputs": [
+				{"name":"rewardTIP3Wallet","type":"address"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "tokensDepositedToFarm",
+			"inputs": [
+				{"name":"userAccountOwner","type":"address"},
+				{"name":"tokensDeposited","type":"uint128"},
+				{"name":"tokensAmount","type":"uint128"},
+				{"name":"pendingReward","type":"uint128"},
+				{"name":"rewardPerTokenSum","type":"uint256"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "withdrawPendingReward",
+			"inputs": [
+				{"name":"userAccountOwner","type":"address"},
+				{"name":"tokenAmount","type":"uint128"},
+				{"name":"pendingReward","type":"uint128"},
+				{"name":"rewardPerTokenSum","type":"uint256"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "withdrawWithPendingReward",
+			"inputs": [
+				{"name":"userAccountOwner","type":"address"},
+				{"name":"tokensToWithdraw","type":"uint128"},
+				{"name":"originalTokensAmount","type":"uint128"},
+				{"name":"pendingReward","type":"uint128"},
+				{"name":"rewardPerTokenSum","type":"uint256"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "updateUserReward",
+			"inputs": [
+				{"name":"userAccountOwner","type":"address"},
+				{"name":"tokenAmount","type":"uint128"},
+				{"name":"pendingReward","type":"uint128"},
+				{"name":"rewardPerTokenSum","type":"uint256"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "payoutReward",
+			"inputs": [
+				{"name":"userAccountOwner","type":"address"},
+				{"name":"rewardTIP3Wallet","type":"address"},
+				{"name":"userReward","type":"uint128"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "calculateReward",
+			"inputs": [
+				{"name":"_answer_id","type":"uint32"},
+				{"name":"tokenAmount","type":"uint128"},
+				{"name":"pendingReward","type":"uint128"},
+				{"name":"rewardPerTokenSum","type":"uint256"}
+			],
+			"outputs": [
+				{"name":"value0","type":"uint128"}
+			]
+		},
+		{
+			"name": "deployUserAccount",
+			"inputs": [
+				{"name":"userAccountOwner","type":"address"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "getUserAccountAddress",
+			"inputs": [
+				{"name":"_answer_id","type":"uint32"},
+				{"name":"userAccountOwner","type":"address"}
+			],
+			"outputs": [
+				{"name":"value0","type":"address"}
+			]
+		},
+		{
+			"name": "endFarming",
+			"inputs": [
+				{"name":"sendTokensTo","type":"address"}
+			],
+			"outputs": [
+			]
+		}
+	],
+	"data": [
+		{"key":1,"name":"uniqueID","type":"uint256"}
+	],
+	"events": [
+	]
+}
