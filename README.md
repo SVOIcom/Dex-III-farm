@@ -4,9 +4,9 @@
 
 ## Деплой аккаунта (требуется для выполнения операций)
 
-FarmContract -> createUserAccount(address userAccountOnwer)
-userAccountOwner - кошелёк с тонами пользователя
-Стоимость ~ 1-1.5 ton
+FarmContract -> createUserAccount(address userAccountOnwer) \
+userAccountOwner - кошелёк с тонами пользователя \
+Стоимость ~ 1-1.5 ton \
 
 ## Получение адреса пользователя
 
@@ -14,8 +14,8 @@ FarmContract -> getUserAccountAddress(address userAccountOwner)
 
 ## Получение информации о всех фармилках пользователя
 
-UserAccount -> getAllUserFarmInfo() - получение информации о всех фармилках, ключами будут являться те фармилки, в которые пользователь уже вступил
-UserAccount -> getUserFarmInfo(address farm) - получение информации о конкретной фармилке
+UserAccount -> getAllUserFarmInfo() - получение информации о всех фармилках, ключами будут являться те фармилки, в которые пользователь уже вступил \ 
+UserAccount -> getUserFarmInfo(address farm) - получение информации о конкретной фармилке \
 
 ## Добавление фармилки в аккаунт пользователя
 
@@ -36,15 +36,15 @@ UserAccount -> withdrawPendingReward(address farm) -> вывод награды 
 стоимость ~0.5 ton
 
 ### Вывод части токенов + награды
-UserAccount -> withdrawPartWithPendingReward(address farm, uint128 tokensToWithdraw) -> вывод tokensToWithdraw токенов
+UserAccount -> withdrawPartWithPendingReward(address farm, uint128 tokensToWithdraw) -> вывод tokensToWithdraw токенов \
 стоимость ~0.5-1 ton
 
 ### Вывод всех токенов + награды
-UserAccount -> withdrawAllWithPendingReward(address farm) -> вывод всех токенов пользователя из фармилки
+UserAccount -> withdrawAllWithPendingReward(address farm) -> вывод всех токенов пользователя из фармилки \
 стоимость ~0.5-1 ton
 
 ### Обновление текущей награды
-UserAccount -> updateReward(address farm) -> обновление информации о награде пользователя (через запрос с аккаунта, для runlocal см ниже)
+UserAccount -> updateReward(address farm) -> обновление информации о награде пользователя (через запрос с аккаунта, для runlocal см ниже) \
 стоимость ~0.5 ton
 
 ### Расчёт награды пользователя (через runLocal)
