@@ -199,6 +199,7 @@ contract UserAccount is ITokensReceivedCallback, IUserAccount {
         address farm, 
         uint128 tokensToWithdraw
     ) external override onlyOwner onlyKnownFarm(farm) onlyActiveFarm(farm) {
+        require(farmInfo[farm].stackedTokens >= tokensToWithdraw);
         tvm.rawReserve(msg.value, 2);
         farmInfo[farm].stackedTokens = farmInfo[farm].stackedTokens - tokensToWithdraw;
         

@@ -1,8 +1,8 @@
 const userParams = {
     tokensToTransfer: 1000e9,
     tokensForPartWithdraw: '2000000000000',
-    stackingTIP3Wallet: '0:7b07c8878dc179414840131e333be160297a54a97d9b44445db782f420018363',
-    rewardTIP3Wallet: '0:746f7b03f5601039bb68bfa448f1d8ed08f0e6b40fad2a342fdf88c6b12bf5b8',
+    stackingTIP3Wallet: '0:c16de8134c24dbbf01ea53dc75995d3fd8e24e53c2ca0ff6d4f6295e8a7a68d0',
+    rewardTIP3Wallet: '0:db1f9e57b299c5c717188d0c9bdb5549a76da9f16f7bf7f505dd510d27dbc306',
 }
 
 module.exports = {

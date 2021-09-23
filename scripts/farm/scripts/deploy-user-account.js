@@ -3,7 +3,7 @@ const { writeContractData } = require("../../utils/migration/manageContractData"
 const { operationFlags } = require("../../utils/transferFlags");
 
 async function main() {
-    let contracts = await loadDefaultContaracts();
+    let contracts = await loadDefaultContaracts(false);
 
     contracts.userAccountContract.setKeyPair(contracts.msigWallet.keyPair);
 
