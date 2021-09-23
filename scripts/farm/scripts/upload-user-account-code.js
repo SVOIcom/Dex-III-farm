@@ -3,7 +3,7 @@ const { loadDefaultContaracts } = require("../../utils/loadDefaultContract");
 const { operationFlags } = require("../../utils/transferFlags");
 
 async function main() {
-    let contracts = await loadDefaultContaracts();
+    let contracts = await loadDefaultContaracts(false);
 
     let userAccountContract = await contracts.locklift.factory.getContract('UserAccount', configuration.buildDirectory);
 

@@ -10,12 +10,27 @@
 			]
 		},
 		{
-			"name": "test",
+			"name": "addElements",
 			"inputs": [
-				{"name":"_answer_id","type":"uint32"}
+				{"name":"iterations","type":"uint32"}
 			],
 			"outputs": [
-				{"name":"value0","type":"uint64"}
+			]
+		},
+		{
+			"name": "testIteration",
+			"inputs": [
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "test",
+			"inputs": [
+				{"name":"index","type":"uint32"},
+				{"name":"upload","type":"cell"}
+			],
+			"outputs": [
 			]
 		}
 	],

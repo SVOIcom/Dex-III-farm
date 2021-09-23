@@ -17,10 +17,10 @@ const { Locklift } = require("locklift/locklift");
  */
 
 /**
- * 
+ * @param {Boolean} userAccountContractExist
  * @returns {Promise<DefaultContracts>}
  */
-async function loadDefaultContaracts() {
+async function loadDefaultContaracts(userAccountContractExist = true) {
 
     let locklift = await initializeLocklift(configuration.pathToLockliftConfig, configuration.network);
     /**
@@ -34,11 +34,15 @@ async function loadDefaultContaracts() {
      */
     let farmContract = await loadContractData(locklift, configuration, `${configuration.network}_FarmContract.json`);
     farmContract = extendContractToFarm(farmContract);
-
     /**
      * @type {UserAccount}
      */
-    let userAccountContract = await loadContractData(locklift, configuration, `${configuration.network}_UserAccount.json`);
+    let userAccountContract;
+    if (userAccountContractExist) {
+        userAccountContract = await loadContractData(locklift, configuration, `${configuration.network}_UserAccount.json`);
+    } else {
+        userAccountContract = await locklift.factory.getContract('UserAccount', configuration.buildDirectory);
+    }
     userAccountContract = extendContractToUserAccount(userAccountContract);
 
     return {

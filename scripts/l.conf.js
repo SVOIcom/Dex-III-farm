@@ -35,5 +35,32 @@ module.exports = {
                 amount: 20,
             }
         },
+        devnet: {
+            ton_client: {
+                // See the TON client specification for all available options
+                network: {
+                    server_address: 'net.ton.dev',
+                    endpoints: ['net.ton.dev']
+                },
+
+                abi: {
+                    message_expiration_timeout: 1200000
+                }
+            },
+
+            // This giver is default local-node giver
+            giver: {
+                address: '0:fb6dad745ff9f88597e5a3e7824b4030e91ade869464274ed808812edf6adaf3',
+                abi: { "ABI version": 2, "header": ["time", "expire"], "functions": [ { "name": "constructor", "inputs": [ ], "outputs": [ ] }, { "name": "sendGrams", "inputs": [ {"name":"dest","type":"address"}, {"name":"amount","type":"uint64"} ], "outputs": [ ] } ], "data": [ ], "events": [ ]},
+                key: '',
+            },
+
+            // Use tonos-cli to generate your phrase
+            // !!! Never commit it in your repos !!!
+            keys: {
+                phrase: 'melody clarify hand pause kit economy bind behind grid witness cheap tomorrow',
+                amount: 20,
+            }
+        },
     },
 };
