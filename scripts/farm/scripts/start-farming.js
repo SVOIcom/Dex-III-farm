@@ -3,7 +3,7 @@ const { operationFlags } = require("../../utils/transferFlags");
 const { farmingParameters } = require("../modules/farmParameters");
 
 async function main() {
-    let contracts = await loadDefaultContaracts();
+    let contracts = await loadDefaultContaracts(false);
 
     let startFarmPayload = await contracts.farmContract.startFarming(farmingParameters);
 
