@@ -13,6 +13,7 @@ async function main() {
     let walletContract = await locklift.factory.getContract('SafeMultisigWallet', configuration.buildDirectory);
 
     let [keyPair] = await locklift.keys.getKeyPairs();
+    console.log(keyPair);
     walletContract.setKeyPair(keyPair);
 
     try {
@@ -30,14 +31,14 @@ async function main() {
             console.log(`Multisig wallet deployed at address: ${walletContract.address}`);
         }
 
-        await locklift.giver.giver.run({
-            method: 'sendGrams',
-            params: {
-                dest: walletContract.address,
-                amount: locklift.utils.convertCrystal(1000, 'nano')
-            },
-            keyPair: walletContract.keyPair
-        });
+        // await locklift.giver.giver.run({
+        //     method: 'sendGrams',
+        //     params: {
+        //         dest: walletContract.address,
+        //         amount: locklift.utils.convertCrystal(1000, 'nano')
+        //     },
+        //     keyPair: walletContract.keyPair
+        // });
     } catch (err) {
         console.log(err);
         let address = tryToExtractAddress(err);

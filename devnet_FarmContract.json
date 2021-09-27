@@ -1,0 +1,9 @@
+{
+	"name": "FarmContract",
+	"address": "0:701626ff3cd72ec7fa76a8e2f8fec7a8631f372058bbe1556d447691969b94bc",
+	"keyPair": {
+		"public": "1d0bafcaa5a39a39f7567bcd5ddaa556eaa12a4eecc87ea142bd0a991e9cf749",
+		"secret": "e682829f060325cdb06dedb59636f62f11234c0cbe53511580a388b38b4970bd"
+	},
+	"network": "devnet"
+}
